@@ -18,6 +18,7 @@ class EntityPlayerPlus : public EntityPlus {
 public:
 	std::set<std::string> customCacheTags;
 	std::unordered_map<std::string, double> customCacheResults;
+	std::vector<int> customPlayerForms;
 };
 
 // Attributes for EntityFamiliar.

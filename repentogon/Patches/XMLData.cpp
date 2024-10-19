@@ -2275,7 +2275,10 @@ void ProcessXmlNode(xml_node<char>* node,bool force = false) {
 				if (attributes["name"].compare("StringTable::InvalidKey") == 0) { attributes["name"] = attributes["untranslatedname"]; }
 			}
 
-			//printf("giantbook: %s (%d) \n", attributes["name"].c_str(),id);
+			if (attributes.find("customtags") != attributes.end())
+				ParseTagsString(attributes["customtags"], XMLStuff.PlayerFormData->customtags[id]);
+
+			printf("transformation: %s (%d) \n", attributes["name"].c_str(),id);
 			if (attributes.find("relativeid") != attributes.end()) { XMLStuff.PlayerFormData->byrelativeid[attributes["sourceid"] + attributes["relativeid"]] = id; }
 			XMLStuff.PlayerFormData->bynamemod[attributes["name"] + attributes["sourceid"]] = id;
 			XMLStuff.PlayerFormData->bymod[attributes["sourceid"]].push_back(id);
@@ -3208,6 +3211,7 @@ void inheritdaddy(xml_node<char>* auxnode, xml_node<char>* clonedNode) {
 }
 
 char * BuildModdedXML(char * xml,const string &filename,bool needsresourcepatch) {
+	logViewer.AddLog("[TEST]", "%s", filename.c_str());
 	if (no) {return xml;}
 	//resources
 	if (needsresourcepatch) {
@@ -3717,7 +3721,12 @@ HOOK_METHOD(xmldocument_rep, parse, (char* xmldata)-> void) {
 		}
 		else if (charfind(xmldata, "<bossc", 50)) {
 			super(BuildModdedXML(xmldata, "bosscolors.xml", false));
-		}else if (charfind(xmldata, "<playe", 50)) {
+		}
+		else if (charfind(xmldata, "<playerfo", 50)) {
+			printf("yoyoyo %s", BuildModdedXML(xmldata, "playerforms.xml", false));
+			super(BuildModdedXML(xmldata, "playerforms.xml", false));
+		}
+		else if (charfind(xmldata, "<playe", 50)) {
 			super(ParseModdedXMLAttributes(xmldata, "players.xml"));
 		}
 		else if (charfind(xmldata, "<chal", 50)) {
@@ -3747,10 +3756,6 @@ HOOK_METHOD(xmldocument_rep, parse, (char* xmldata)-> void) {
 		}
 		else if (charfind(xmldata, "<giantb", 50)) {
 			super(BuildModdedXML(xmldata, "giantbook.xml", false));
-		}
-		else if (charfind(xmldata, "<playerfo", 50)) {
-			//printf("yoyoyo %s", BuildModdedXML(xmldata, "playerforms.xml", false));
-			super(BuildModdedXML(xmldata, "playerforms.xml", false));
 		}
 		else if ((charfind(xmldata, "<ambush", 50)) || (charfind(xmldata, "<bossru", 50)) || (charfind(xmldata, "<bossamb", 50))) {
 			super(BuildModdedXML(xmldata, "ambush.xml", false));

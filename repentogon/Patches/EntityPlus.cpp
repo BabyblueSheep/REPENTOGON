@@ -6,6 +6,7 @@
 #include "IsaacRepentance.h"
 #include "SigScan.h"
 #include "ASMPatcher.hpp"
+#include "XMLData.h"
 
 // ----------------------------------------------------------------------------------------------------
 // -- EntityPlusHolder
@@ -75,6 +76,7 @@ HOOK_METHOD(Entity, Init, (unsigned int type, unsigned int variant, unsigned int
 	// Initialize the EntityPlus as the correct subclass for this entity.
 	if (type == 1) {
 		holder->data = std::make_unique<EntityPlayerPlus>();
+		dynamic_cast<EntityPlayerPlus*>(holder->data.get())->customPlayerForms = std::vector(XMLStuff.PlayerFormData->nodes.size() - 13, 0);
 	} else if (type == 3) {
 		holder->data = std::make_unique<EntityFamiliarPlus>();
 	} else if (type == 7) {

@@ -40,6 +40,58 @@ LUA_FUNCTION(Lua_ItemConfigItem_HasCustomTag)
 	return 1;
 }
 
+LUA_FUNCTION(Lua_ItemConfigItem_AddCustomTags)
+{
+	ItemConfig_Item* config = lua::GetUserdata<ItemConfig_Item*>(L, 1, lua::Metatables::ITEM, "Item");
+
+	const int type = lua_type(L, 2);
+
+	if (type == LUA_TTABLE) {
+		std::set<std::string> customTags;
+
+		auto tableLength = lua_rawlen(L, 2);
+		for (auto i = 1; i <= tableLength; ++i) {
+			lua_pushinteger(L, i);
+			lua_gettable(L, 2);
+			if (lua_type(L, -1) == LUA_TNIL)
+				break;
+			GetItemXML(config)->customtags[config->id].insert(stringlower(luaL_checkstring(L, -1)));
+			lua_pop(L, 1);
+		}
+	}
+	else {
+		GetItemXML(config)->customtags[config->id].insert(stringlower(luaL_checkstring(L, 2)));
+	}
+
+	return 0;
+}
+
+LUA_FUNCTION(Lua_ItemConfigItem_RemoveCustomTags)
+{
+	ItemConfig_Item* config = lua::GetUserdata<ItemConfig_Item*>(L, 1, lua::Metatables::ITEM, "Item");
+
+	const int type = lua_type(L, 2);
+
+	if (type == LUA_TTABLE) {
+		std::set<std::string> customTags;
+
+		auto tableLength = lua_rawlen(L, 2);
+		for (auto i = 1; i <= tableLength; ++i) {
+			lua_pushinteger(L, i);
+			lua_gettable(L, 2);
+			if (lua_type(L, -1) == LUA_TNIL)
+				break;
+			GetItemXML(config)->customtags[config->id].erase(stringlower(luaL_checkstring(L, -1)));
+			lua_pop(L, 1);
+		}
+	}
+	else {
+		GetItemXML(config)->customtags[config->id].erase(stringlower(luaL_checkstring(L, 2)));
+	}
+
+	return 0;
+}
+
 LUA_FUNCTION(Lua_ItemConfigItem_GetCustomCacheTags) {
 	ItemConfig_Item* config = lua::GetUserdata<ItemConfig_Item*>(L, 1, lua::Metatables::ITEM, "Item");
 
@@ -70,6 +122,8 @@ void RegisterItemFunctions(lua_State* L) {
 	luaL_Reg functions[] = {
 		{ "GetCustomTags", Lua_ItemConfigItem_GetCustomTags },
 		{ "HasCustomTag", Lua_ItemConfigItem_HasCustomTag },
+		{ "AddCustomTags", Lua_ItemConfigItem_AddCustomTags },
+		{ "RemoveCustomTags", Lua_ItemConfigItem_RemoveCustomTags },
 		{ "GetCustomCacheTags", Lua_ItemConfigItem_GetCustomCacheTags },
 		{ "HasCustomCacheTag", Lua_ItemConfigItem_HasCustomCacheTag },
 		{ NULL, NULL }

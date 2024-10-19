@@ -376,6 +376,74 @@ LUA_FUNCTION(Lua_EntityConfigEntityHasCustomTag)
 	return 1;
 }
 
+LUA_FUNCTION(Lua_EntityConfigEntity_AddCustomTags)
+{
+	EntityConfig_Entity* entity = *lua::GetUserdata<EntityConfig_Entity**>(L, 1, lua::metatables::EntityConfigEntityMT);
+	std::set<std::string>* customTags = &XMLStuff.EntityData->customtags[{ entity->id, 0, 0 }];
+	
+	auto iter = XMLStuff.EntityData->customtags.find({ entity->id, entity->variant, entity->subtype });
+	if (iter != XMLStuff.EntityData->customtags.end()) {
+		customTags = &(iter->second);
+	}
+	iter = XMLStuff.EntityData->customtags.find({ entity->id, entity->variant, 0 });
+	if (iter != XMLStuff.EntityData->customtags.end()) {
+		customTags = &(iter->second);
+	}
+
+	const int type = lua_type(L, 2);
+
+	if (type == LUA_TTABLE) {
+		auto tableLength = lua_rawlen(L, 2);
+		for (auto i = 1; i <= tableLength; ++i) {
+			lua_pushinteger(L, i);
+			lua_gettable(L, 2);
+			if (lua_type(L, -1) == LUA_TNIL)
+				break;
+			customTags->insert(stringlower(luaL_checkstring(L, -1)));
+			lua_pop(L, 1);
+		}
+	}
+	else {
+		customTags->insert(stringlower(luaL_checkstring(L, 2)));
+	}
+
+	return 0;
+}
+
+LUA_FUNCTION(Lua_EntityConfigEntity_RemoveCustomTags)
+{
+	EntityConfig_Entity* entity = *lua::GetUserdata<EntityConfig_Entity**>(L, 1, lua::metatables::EntityConfigEntityMT);
+	std::set<std::string>* customTags = &XMLStuff.EntityData->customtags[{ entity->id, 0, 0 }];
+
+	auto iter = XMLStuff.EntityData->customtags.find({ entity->id, entity->variant, entity->subtype });
+	if (iter != XMLStuff.EntityData->customtags.end()) {
+		customTags = &(iter->second);
+	}
+	iter = XMLStuff.EntityData->customtags.find({ entity->id, entity->variant, 0 });
+	if (iter != XMLStuff.EntityData->customtags.end()) {
+		customTags = &(iter->second);
+	}
+
+	const int type = lua_type(L, 2);
+
+	if (type == LUA_TTABLE) {
+		auto tableLength = lua_rawlen(L, 2);
+		for (auto i = 1; i <= tableLength; ++i) {
+			lua_pushinteger(L, i);
+			lua_gettable(L, 2);
+			if (lua_type(L, -1) == LUA_TNIL)
+				break;
+			customTags->erase(stringlower(luaL_checkstring(L, -1)));
+			lua_pop(L, 1);
+		}
+	}
+	else {
+		customTags->erase(stringlower(luaL_checkstring(L, 2)));
+	}
+
+	return 0;
+}
+
 /*
 * EntityConfigPlayer Functions
 */
@@ -829,6 +897,8 @@ static void RegisterEntityConfigEntity(lua_State* L) {
 		{ "HasFloorAlts", Lua_EntityConfigEntityHasFloorAlts },
 		{ "GetCustomTags", Lua_EntityConfigEntityGetCustomTags },
 		{ "HasCustomTag", Lua_EntityConfigEntityHasCustomTag },
+		{ "AddCustomTags", Lua_EntityConfigEntity_AddCustomTags },
+		{ "RemoveCustomTags", Lua_EntityConfigEntity_RemoveCustomTags },
 		{ NULL, NULL }
 	};
 	lua::RegisterNewClass(L, lua::metatables::EntityConfigEntityMT, lua::metatables::EntityConfigEntityMT, functions);

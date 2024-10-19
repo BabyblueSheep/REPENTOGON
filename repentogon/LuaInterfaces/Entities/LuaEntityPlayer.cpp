@@ -490,15 +490,6 @@ LUA_FUNCTION(Lua_PlayerDropCollectibleByHistoryIndex) {
 	return 1;
 }
 
-LUA_FUNCTION(Lua_PlayerIncrementPlayerFormCounter) {
-	Entity_Player* player = lua::GetUserdata<Entity_Player*>(L, 1, lua::Metatables::ENTITY_PLAYER, "EntityPlayer");
-	int ePlayerForm = (int)luaL_checkinteger(L, 2);
-	int num = (int)luaL_checkinteger(L, 3);
-
-	player->IncrementPlayerFormCounter(ePlayerForm, num);
-	return 0;
-}
-
 LUA_FUNCTION(Lua_PlayerTryPreventDeath) {
 	Entity_Player* player = lua::GetUserdata<Entity_Player*>(L, 1, lua::Metatables::ENTITY_PLAYER, "EntityPlayer");
 	lua_pushboolean(L, player->TryPreventDeath());
@@ -1681,19 +1672,6 @@ LUA_FUNCTION(Lua_PlayerSetEveSumptoriumCharge) {
 	return 0;
 }
 
-LUA_FUNCTION(Lua_PlayerGetPlayerFormCounter) {
-	Entity_Player* player = lua::GetUserdata<Entity_Player*>(L, 1, lua::Metatables::ENTITY_PLAYER, "EntityPlayer");
-	int playerFormType = (int)luaL_checkinteger(L, 2);
-
-	if (playerFormType >= 0 && playerFormType <= 14) {
-		lua_pushinteger(L, player->_playerForms[playerFormType]);
-	}
-	else {
-		return luaL_error(L, "Invalid PlayerForm %d", playerFormType);
-	}
-	return 1;
-}
-
 LUA_FUNCTION(Lua_PlayerGetMaxPocketItems) {
 	Entity_Player* player = lua::GetUserdata<Entity_Player*>(L, 1, lua::Metatables::ENTITY_PLAYER, "EntityPlayer");
 	lua_pushinteger(L, player->GetMaxPocketItems());
@@ -2606,7 +2584,6 @@ HOOK_METHOD(LuaEngine, RegisterClasses, () -> void) {
 		{ "SetPocketActiveItem", Lua_PlayerSetPocketActiveItem },
 		{ "DropCollectible", Lua_PlayerDropCollectible },
 		{ "DropCollectibleByHistoryIndex", Lua_PlayerDropCollectibleByHistoryIndex },
-		{ "IncrementPlayerFormCounter", Lua_PlayerIncrementPlayerFormCounter },
 		{ "TryPreventDeath", Lua_PlayerTryPreventDeath },
 		{ "SetCanShoot", Lua_PlayerSetCanShoot },
 		{ "GetDeadEyeCharge", Lua_PlayerGetDeadEyeCharge },
@@ -2717,7 +2694,6 @@ HOOK_METHOD(LuaEngine, RegisterClasses, () -> void) {
 		{ "CheckFamiliarEx", Lua_EntityPlayer_CheckFamiliarEx },
 		{ "GetEveSumptoriumCharge", Lua_PlayerGetEveSumptoriumCharge },
 		{ "SetEveSumptoriumCharge", Lua_PlayerSetEveSumptoriumCharge },
-		{ "GetPlayerFormCounter", Lua_PlayerGetPlayerFormCounter },
 		{ "GetMaxPocketItems", Lua_PlayerGetMaxPocketItems },
 		{ "AddBoneOrbital", Lua_PlayerAddBoneOrbital },
 		//{ "AddItemCard", Lua_PlayerAddItemCard },
