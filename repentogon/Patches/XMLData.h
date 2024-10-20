@@ -277,6 +277,7 @@ public:
 	XMLNodeIdxLookup stages;
 	XMLNodeIdxLookup backdrops;
 	XMLNodeIdxLookup achievements;
+	XMLNodeIdxLookup playerforms;
 	XMLChilds achievlistpermod;
 
 	void Clear() {
@@ -427,6 +428,20 @@ public:
 		this->defmaxid = m;
 	}
 };
+
+class XMLPlayerForm : public XMLDataHolder {
+public:
+	// Holds the contents of the "tags" attribute, converted to lowercase and parsed into a bitset.
+	unordered_map<int, unsigned long long> tags;
+	// Modded null costumes are loaded after all playerforms, so I'm storing costume-playerform relations here.
+	XMLNodeIdxLookup byrelativecostume;
+
+	XMLPlayerForm(int m) {
+		this->maxid = m;
+		this->defmaxid = m;
+	}
+};
+
 
 class XMLGeneric : public XMLDataHolder {
 public:
@@ -694,7 +709,7 @@ struct XMLData {
 	XMLAchievement* AchievementData = new XMLAchievement();
 	XMLGeneric* GiantBookData = new XMLGeneric(46);
 	XMLGeneric* BossRushData = new XMLGeneric(0);
-	XMLGeneric* PlayerFormData = new XMLGeneric(14);
+	XMLPlayerForm* PlayerFormData = new XMLPlayerForm(14);
 	XMLGeneric* FxLayerData = new XMLGeneric(0);
 	XMLGeneric* FxParamData = new XMLGeneric(0);
 	XMLGeneric* FxRayData = new XMLGeneric(0);

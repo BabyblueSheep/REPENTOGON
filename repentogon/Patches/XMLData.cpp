@@ -825,6 +825,56 @@ void ParseTagsString(const string& str, set<string>& out) {
 	}
 }
 
+// Converts a string of space-separated tags to lowercase, parses each individual tag, and inserts them into the provided bitset based on a hardcoded set of flags.
+// Unsure if there's an exposed method in the game (if there even is one) that parses the tags, or if it just parses in a method for loading .xmls.
+// Used for custom playerforms that have a 'tags' attribute.
+void ParseItemTagsFlag(const string &str, unsigned long long &out)
+{
+	const string tagsstr = stringlower(str.c_str());
+	if (!tagsstr.empty()) {
+		stringstream tagstream(tagsstr);
+		string tag;
+		while (getline(tagstream, tag, ' ')) {
+			if (!tag.empty()) {
+				if (tag == "dead") out |= 1 << 0;
+				if (tag == "syringe") out |= 1 << 1;
+				if (tag == "mom") out |= 1 << 2;
+				if (tag == "tech") out |= 1 << 3;
+				if (tag == "battery") out |= 1 << 4;
+				if (tag == "guppy") out |= 1 << 5;
+				if (tag == "fly") out |= 1 << 6;
+				if (tag == "bob") out |= 1 << 7;
+				if (tag == "mushroom") out |= 1 << 8;
+				if (tag == "baby") out |= 1 << 9;
+				if (tag == "angel") out |= 1 << 10;
+				if (tag == "devil") out |= 1 << 11;
+				if (tag == "poop") out |= 1 << 12;
+				if (tag == "book") out |= 1 << 13;
+				if (tag == "spider") out |= 1 << 14;
+				if (tag == "quest") out |= 1 << 15;
+				if (tag == "monstermanual") out |= 1 << 16;
+				if (tag == "nogreed") out |= 1 << 17;
+				if (tag == "food") out |= 1 << 18;
+				if (tag == "tearsup") out |= 1 << 19;
+				if (tag == "offensive") out |= 1 << 20;
+				if (tag == "nokeeper") out |= 1 << 21;
+				if (tag == "nolostbr") out |= 1 << 22;
+				if (tag == "stars") out |= 1 << 23;
+				if (tag == "summonable") out |= 1 << 24;
+				if (tag == "nocantrip") out |= 1 << 25;
+				if (tag == "wisp") out |= 1 << 26;
+				if (tag == "uniquefamiliar") out |= 1 << 27;
+				if (tag == "nochallenge") out |= 1 << 28;
+				if (tag == "nodaily") out |= 1 << 29;
+				if (tag == "lazarusshared") out |= 1 << 30;
+				if (tag == "lazarussharedglobal") out |= static_cast<unsigned long long>(1) << 31;
+				if (tag == "noeden") out |= static_cast<unsigned long long>(1) << 32;
+
+			}
+		}
+	}
+}
+
 // If the item has the appropriate customtags, adds it to the customreviveitems map
 // to make it more efficient to check if the player has any of them layer.
 void CheckCustomRevive(const int id, XMLItem* data) {
@@ -2067,6 +2117,11 @@ void ProcessXmlNode(xml_node<char>* node,bool force = false) {
 					costume["name"] = getFileName(costume["anm2path"]);
 				}
 				costume["sourceid"] = lastmodid;
+				if (costume.count("relativeid") > 0 && XMLStuff.PlayerFormData->byrelativecostume.find(lastmodid + costume["relativeid"]) != XMLStuff.PlayerFormData->byrelativecostume.end())
+				{
+					XMLStuff.PlayerFormData->nodes[XMLStuff.PlayerFormData->byrelativecostume[lastmodid + costume["relativeid"]]]["costume"] = costume["id"];
+				}
+
 				if (costume.count("relativeid") > 0) { XMLStuff.NullCostumeData->byrelativeid[lastmodid + costume["relativeid"]] = idnull; }
 				//printf("nullcostume: %s %s (%s) \n", costume["name"].c_str(), costume["id"].c_str(), costume["type"].c_str());
 				XMLStuff.NullCostumeData->ProcessChilds(auxnode, idnull);
@@ -2265,9 +2320,6 @@ void ProcessXmlNode(xml_node<char>* node,bool force = false) {
 				attributes["sourceid"] = lastmodid;
 			}
 			XMLStuff.PlayerFormData->ProcessChilds(auxnode, id);
-			if ((attributes.find("name") == attributes.end()) && (attributes.find("gfx") != attributes.end())) {
-				attributes["name"] = getFileName(attributes["gfx"]);
-			}
 
 			if (attributes["name"].find("#") != string::npos) {
 				attributes["untranslatedname"] = attributes["name"];
@@ -2278,16 +2330,23 @@ void ProcessXmlNode(xml_node<char>* node,bool force = false) {
 			if (attributes.find("customtags") != attributes.end())
 				ParseTagsString(attributes["customtags"], XMLStuff.PlayerFormData->customtags[id]);
 
-			printf("transformation: %s (%d) \n", attributes["name"].c_str(),id);
+			if (attributes.find("tags") != attributes.end())
+				ParseItemTagsFlag(attributes["tags"], XMLStuff.PlayerFormData->tags[id]);
+
+			//printf("transformation: %s (%d) \n", attributes["name"].c_str(),id);
 			if (attributes.find("relativeid") != attributes.end()) { XMLStuff.PlayerFormData->byrelativeid[attributes["sourceid"] + attributes["relativeid"]] = id; }
+			if (attributes.find("costume") != attributes.end()) { 
+				attributes["relativecostume"] = attributes["costume"];
+				XMLStuff.PlayerFormData->byrelativecostume[attributes["sourceid"] + attributes["relativecostume"]] = id; 
+				attributes.erase("costume");
+			}
 			XMLStuff.PlayerFormData->bynamemod[attributes["name"] + attributes["sourceid"]] = id;
 			XMLStuff.PlayerFormData->bymod[attributes["sourceid"]].push_back(id);
 			XMLStuff.PlayerFormData->byfilepathmulti.tab[currpath].push_back(id);
 			XMLStuff.PlayerFormData->byname[attributes["name"]] = id;
 			XMLStuff.PlayerFormData->nodes[id] = attributes;
 			XMLStuff.PlayerFormData->byorder[XMLStuff.PlayerFormData->nodes.size()] = id;
-			//XMLStuff.ModData->sounds[lastmodid] += 1;
-			//printf("music: %s id: %d // %d \n",music["name"].c_str(),id, XMLStuff.MusicData.maxid);
+			XMLStuff.ModData->playerforms[lastmodid] += 1;
 		}
 		break;
 	case 25: //bosscolors
@@ -3723,7 +3782,7 @@ HOOK_METHOD(xmldocument_rep, parse, (char* xmldata)-> void) {
 			super(BuildModdedXML(xmldata, "bosscolors.xml", false));
 		}
 		else if (charfind(xmldata, "<playerfo", 50)) {
-			printf("yoyoyo %s", BuildModdedXML(xmldata, "playerforms.xml", false));
+			//printf("yoyoyo %s", BuildModdedXML(xmldata, "playerforms.xml", false));
 			super(BuildModdedXML(xmldata, "playerforms.xml", false));
 		}
 		else if (charfind(xmldata, "<playe", 50)) {
