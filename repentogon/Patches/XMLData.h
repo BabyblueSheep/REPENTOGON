@@ -433,6 +433,10 @@ class XMLPlayerForm : public XMLDataHolder {
 public:
 	// Holds the contents of the "tags" attribute, converted to lowercase and parsed into a bitset.
 	unordered_map<int, unsigned long long> tags;
+	// Holds the contents of the "cache" attribute, converted to lowercase and parsed into a bitset.
+	unordered_map<int, unsigned int> cache;
+	// Holds the contents of the "customcache" attribute, converted to lowercase and parsed into a set.
+	unordered_map<int, set<string>> customcache;
 	// Modded null costumes are loaded after all playerforms, so I'm storing costume-playerform relations here.
 	XMLNodeIdxLookup byrelativecostume;
 

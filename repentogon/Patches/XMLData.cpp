@@ -828,7 +828,7 @@ void ParseTagsString(const string& str, set<string>& out) {
 // Converts a string of space-separated tags to lowercase, parses each individual tag, and inserts them into the provided bitset based on a hardcoded set of flags.
 // Unsure if there's an exposed method in the game (if there even is one) that parses the tags, or if it just parses in a method for loading .xmls.
 // Used for custom playerforms that have a 'tags' attribute.
-void ParseItemTagsFlag(const string &str, unsigned long long &out)
+void ParseItemTagsString(const string &str, unsigned long long &out)
 {
 	const string tagsstr = stringlower(str.c_str());
 	if (!tagsstr.empty()) {
@@ -836,40 +836,68 @@ void ParseItemTagsFlag(const string &str, unsigned long long &out)
 		string tag;
 		while (getline(tagstream, tag, ' ')) {
 			if (!tag.empty()) {
-				if (tag == "dead") out |= 1 << 0;
-				if (tag == "syringe") out |= 1 << 1;
-				if (tag == "mom") out |= 1 << 2;
-				if (tag == "tech") out |= 1 << 3;
-				if (tag == "battery") out |= 1 << 4;
-				if (tag == "guppy") out |= 1 << 5;
-				if (tag == "fly") out |= 1 << 6;
-				if (tag == "bob") out |= 1 << 7;
-				if (tag == "mushroom") out |= 1 << 8;
-				if (tag == "baby") out |= 1 << 9;
-				if (tag == "angel") out |= 1 << 10;
-				if (tag == "devil") out |= 1 << 11;
-				if (tag == "poop") out |= 1 << 12;
-				if (tag == "book") out |= 1 << 13;
-				if (tag == "spider") out |= 1 << 14;
-				if (tag == "quest") out |= 1 << 15;
-				if (tag == "monstermanual") out |= 1 << 16;
-				if (tag == "nogreed") out |= 1 << 17;
-				if (tag == "food") out |= 1 << 18;
-				if (tag == "tearsup") out |= 1 << 19;
-				if (tag == "offensive") out |= 1 << 20;
-				if (tag == "nokeeper") out |= 1 << 21;
-				if (tag == "nolostbr") out |= 1 << 22;
-				if (tag == "stars") out |= 1 << 23;
-				if (tag == "summonable") out |= 1 << 24;
-				if (tag == "nocantrip") out |= 1 << 25;
-				if (tag == "wisp") out |= 1 << 26;
-				if (tag == "uniquefamiliar") out |= 1 << 27;
-				if (tag == "nochallenge") out |= 1 << 28;
-				if (tag == "nodaily") out |= 1 << 29;
-				if (tag == "lazarusshared") out |= 1 << 30;
+				if (tag == "dead") out |= static_cast<unsigned long long>(1) << 0;
+				if (tag == "syringe") out |= static_cast<unsigned long long>(1) << 1;
+				if (tag == "mom") out |= static_cast<unsigned long long>(1) << 2;
+				if (tag == "tech") out |= static_cast<unsigned long long>(1) << 3;
+				if (tag == "battery") out |= static_cast<unsigned long long>(1) << 4;
+				if (tag == "guppy") out |= static_cast<unsigned long long>(1) << 5;
+				if (tag == "fly") out |= static_cast<unsigned long long>(1) << 6;
+				if (tag == "bob") out |= static_cast<unsigned long long>(1) << 7;
+				if (tag == "mushroom") out |= static_cast<unsigned long long>(1) << 8;
+				if (tag == "baby") out |= static_cast<unsigned long long>(1) << 9;
+				if (tag == "angel") out |= static_cast<unsigned long long>(1) << 10;
+				if (tag == "devil") out |= static_cast<unsigned long long>(1) << 11;
+				if (tag == "poop") out |= static_cast<unsigned long long>(1) << 12;
+				if (tag == "book") out |= static_cast<unsigned long long>(1) << 13;
+				if (tag == "spider") out |= static_cast<unsigned long long>(1) << 14;
+				if (tag == "quest") out |= static_cast<unsigned long long>(1) << 15;
+				if (tag == "monstermanual") out |= static_cast<unsigned long long>(1) << 16;
+				if (tag == "nogreed") out |= static_cast<unsigned long long>(1) << 17;
+				if (tag == "food") out |= static_cast<unsigned long long>(1) << 18;
+				if (tag == "tearsup") out |= static_cast<unsigned long long>(1) << 19;
+				if (tag == "offensive") out |= static_cast<unsigned long long>(1) << 20;
+				if (tag == "nokeeper") out |= static_cast<unsigned long long>(1) << 21;
+				if (tag == "nolostbr") out |= static_cast<unsigned long long>(1) << 22;
+				if (tag == "stars") out |= static_cast<unsigned long long>(1) << 23;
+				if (tag == "summonable") out |= static_cast<unsigned long long>(1) << 24;
+				if (tag == "nocantrip") out |= static_cast<unsigned long long>(1) << 25;
+				if (tag == "wisp") out |= static_cast<unsigned long long>(1) << 26;
+				if (tag == "uniquefamiliar") out |= static_cast<unsigned long long>(1) << 27;
+				if (tag == "nochallenge") out |= static_cast<unsigned long long>(1) << 28;
+				if (tag == "nodaily") out |= static_cast<unsigned long long>(1) << 29;
+				if (tag == "lazarusshared") out |= static_cast<unsigned long long>(1) << 30;
 				if (tag == "lazarussharedglobal") out |= static_cast<unsigned long long>(1) << 31;
 				if (tag == "noeden") out |= static_cast<unsigned long long>(1) << 32;
 
+			}
+		}
+	}
+}
+
+void ParseCacheFlagsString(const string& str, unsigned int& out)
+{
+	const string tagsstr = stringlower(str.c_str());
+	if (!tagsstr.empty()) {
+		stringstream tagstream(tagsstr);
+		string tag;
+		while (getline(tagstream, tag, ' ')) {
+			if (!tag.empty()) {
+				if (tag == "damage") out |= 1 << 0;
+				if (tag == "firedelay") out |= 1 << 1;
+				if (tag == "shotspeed") out |= 1 << 2;
+				if (tag == "range") out |= 1 << 3;
+				if (tag == "speed") out |= 1 << 4;
+				if (tag == "tearflag") out |= 1 << 5;
+				if (tag == "tearcolor") out |= 1 << 6;
+				if (tag == "flying") out |= 1 << 7;
+				if (tag == "weapon") out |= 1 << 8;
+				if (tag == "familiars") out |= 1 << 9;
+				if (tag == "luck") out |= 1 << 10;
+				if (tag == "size") out |= 1 << 11;
+				if (tag == "color") out |= 1 << 12;
+				if (tag == "pickupvision") out |= 1 << 13;
+				if (tag == "all") out |= (1 << 16) - 1;
 			}
 		}
 	}
@@ -2120,6 +2148,10 @@ void ProcessXmlNode(xml_node<char>* node,bool force = false) {
 				if (costume.count("relativeid") > 0 && XMLStuff.PlayerFormData->byrelativecostume.find(lastmodid + costume["relativeid"]) != XMLStuff.PlayerFormData->byrelativecostume.end())
 				{
 					XMLStuff.PlayerFormData->nodes[XMLStuff.PlayerFormData->byrelativecostume[lastmodid + costume["relativeid"]]]["costume"] = costume["id"];
+					if (idnull == 14) // Special exception since the 14th transformation loaded gets treated as a vanilla one instead of a custom one.
+					{
+						g_Manager->GetItemConfig()->GetPlayerForms()->at(14)->costume = toint(costume["id"]);
+					}
 				}
 
 				if (costume.count("relativeid") > 0) { XMLStuff.NullCostumeData->byrelativeid[lastmodid + costume["relativeid"]] = idnull; }
@@ -2331,7 +2363,15 @@ void ProcessXmlNode(xml_node<char>* node,bool force = false) {
 				ParseTagsString(attributes["customtags"], XMLStuff.PlayerFormData->customtags[id]);
 
 			if (attributes.find("tags") != attributes.end())
-				ParseItemTagsFlag(attributes["tags"], XMLStuff.PlayerFormData->tags[id]);
+				ParseItemTagsString(attributes["tags"], XMLStuff.PlayerFormData->tags[id]);
+
+			if (attributes.find("cache") != attributes.end())
+				ParseCacheFlagsString(attributes["cache"], XMLStuff.PlayerFormData->cache[id]);
+
+			if (attributes.find("customcache") != attributes.end()) {
+				ParseTagsString(attributes["customcache"], XMLStuff.PlayerFormData->customcache[id]);
+				ParseTagsString(attributes["customcache"], XMLStuff.AllCustomCaches);
+			}
 
 			//printf("transformation: %s (%d) \n", attributes["name"].c_str(),id);
 			if (attributes.find("relativeid") != attributes.end()) { XMLStuff.PlayerFormData->byrelativeid[attributes["sourceid"] + attributes["relativeid"]] = id; }

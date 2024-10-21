@@ -8,6 +8,10 @@
 #include <dwmapi.h>
 #include "EntityPlus.h"
 #include "XMLData.h"
+#include "CustomCache.h"
+
+// While there's only 14 transformations in the game, players store up to 15 transformations, likely due to there being a scrapped transformation.
+// This is why I start checking custom transformation IDs at 15 and not 14.
 
 bool CollectibleAndPlayerFormShareCustomTags(unsigned int collectibleID, unsigned int playerForm)
 {
@@ -20,18 +24,23 @@ bool CollectibleAndPlayerFormShareCustomTags(unsigned int collectibleID, unsigne
 	return false;
 }
 
+bool CollectibleAndPlayerFormShareTags(unsigned int collectibleID, unsigned int playerForm)
+{
+	return (g_Manager->GetItemConfig()->GetCollectible(collectibleID)->tags & XMLStuff.PlayerFormData->tags[playerForm]) > 0;
+}
+
 bool CollectibleContributesToForm(unsigned int collectibleID, unsigned int playerForm)
 {
-	if ((g_Manager->GetItemConfig()->GetCollectible(collectibleID)->tags & XMLStuff.PlayerFormData->tags[playerForm]) > 0)
-		return true;
-	return CollectibleAndPlayerFormShareCustomTags(collectibleID, playerForm);
+	return CollectibleAndPlayerFormShareTags(collectibleID, playerForm) || CollectibleAndPlayerFormShareCustomTags(collectibleID, playerForm);
 }
 
 HOOK_METHOD(Entity_Player, IncrementPlayerFormCounter, (int ePlayerForm, int num)->void)
 {
-	if (ePlayerForm < 14)
+	if (ePlayerForm < 15)
 	{
 		super(ePlayerForm, num);
+
+		TriggerCustomCache(this, XMLStuff.PlayerFormData->customcache[ePlayerForm], false);
 		return;
 	}
 	if (XMLStuff.PlayerFormData->nodes.find(ePlayerForm) == XMLStuff.PlayerFormData->nodes.end())
@@ -39,11 +48,11 @@ HOOK_METHOD(Entity_Player, IncrementPlayerFormCounter, (int ePlayerForm, int num
 
 	XMLAttributes attributes = XMLStuff.PlayerFormData->GetNodeById(ePlayerForm);
 	EntityPlayerPlus* playerPlus = GetEntityPlayerPlus(this);
-	int prev = playerPlus->customPlayerForms[ePlayerForm - 14];
-	playerPlus->customPlayerForms[ePlayerForm - 14] += num;
-	if (playerPlus->customPlayerForms[ePlayerForm - 14] < 0)
-		playerPlus->customPlayerForms[ePlayerForm - 14] = 0;
-	if (playerPlus->customPlayerForms[ePlayerForm - 14] == 3 && playerPlus->customPlayerForms[ePlayerForm - 14] > prev)
+	int prev = playerPlus->customPlayerForms[ePlayerForm - 15];
+	playerPlus->customPlayerForms[ePlayerForm - 15] += num;
+	if (playerPlus->customPlayerForms[ePlayerForm - 15] < 0)
+		playerPlus->customPlayerForms[ePlayerForm - 15] = 0;
+	if (playerPlus->customPlayerForms[ePlayerForm - 15] == 3 && playerPlus->customPlayerForms[ePlayerForm - 15] > prev)
 	{
 		g_Manager->_sfxManager.Play(132, 1.0, 0, false, 1, 0);
 
@@ -59,108 +68,128 @@ HOOK_METHOD(Entity_Player, IncrementPlayerFormCounter, (int ePlayerForm, int num
 		{
 			this->AddNullCostume(atoi(attributes["costume"].c_str()));
 		}
+
+		this->AddCacheFlags(XMLStuff.PlayerFormData->cache[ePlayerForm]);
+		this->EvaluateItems();
 	}
-	else if (prev == 3 && playerPlus->customPlayerForms[ePlayerForm - 14] < prev)
+	else if (prev == 3 && playerPlus->customPlayerForms[ePlayerForm - 15] < prev)
 	{
 		this->TryRemoveNullCostume(atoi(attributes["costume"].c_str()));
+
+		this->AddCacheFlags(XMLStuff.PlayerFormData->cache[ePlayerForm]);
+		this->EvaluateItems();
 	}
+	TriggerCustomCache(this, XMLStuff.PlayerFormData->customcache[ePlayerForm], false);
 }
 
 HOOK_METHOD(Entity_Player, AddCollectible, (int type, int charge, bool firsttime, int slot, int vardata)->void)
 {
-	int previousVanillaPlayerForms[15];
-	if (firsttime)
-	{
-		for (int i = 0; i < 14; i++)
+	if (!firsttime) { // Fun Isaac fact: picking up an item doesn't add transformation progress after the first time, BUT dropping an item always removes transformation progress, letting stuff like Butter! bleed transformation progress.
+		super(type, charge, firsttime, slot, vardata);
+		return;
+	}
+
+	for (int i = 15; i <= XMLStuff.PlayerFormData->maxid; i++) {
+		if (CollectibleContributesToForm(type, i))
 		{
-			previousVanillaPlayerForms[i] = this->_playerForms[i];
-		}
-		for (int i = 14; i <= XMLStuff.PlayerFormData->maxid; i++) {
-			if (CollectibleContributesToForm(type, i))
-			{
-				this->IncrementPlayerFormCounter(i, 1);
-			}
+			this->IncrementPlayerFormCounter(i, 1);
 		}
 	}
 	super(type, charge, firsttime, slot, vardata);
-	if (firsttime)
+	for (int i = 0; i < 15; i++)
 	{
-		for (int i = 0; i < 14; i++)
-		{
-			if (previousVanillaPlayerForms[i] == this->_playerForms[i])
-			{
-				if (CollectibleAndPlayerFormShareCustomTags(type, i))
-					this->IncrementPlayerFormCounter(i, 1);
-			}
-		}
+		if (!CollectibleAndPlayerFormShareTags(type, i) && CollectibleAndPlayerFormShareCustomTags(type, i))
+			this->IncrementPlayerFormCounter(i, 1);
 	}
 }
 
 HOOK_METHOD(Entity_Player, RemoveCollectible, (unsigned int CollectibleType, bool IgnoreModifiers, unsigned int ActiveSlot, bool RemoveFromPlayerForm)->void)
 {
-	if (
-		!RemoveFromPlayerForm ||
-		g_Manager->GetItemConfig()->GetCollectible(CollectibleType)->type == 3 ||
-		!this->HasCollectible(CollectibleType, true)
-	)
+	if (!RemoveFromPlayerForm ||
+		g_Manager->GetItemConfig()->GetCollectible(CollectibleType)->type == 3 || // active item
+		!this->HasCollectible(CollectibleType, true))
 	{
 		super(CollectibleType, IgnoreModifiers, ActiveSlot, RemoveFromPlayerForm);
 		return;
 	}
-	int previousVanillaPlayerForms[15];
-	for (int i = 0; i < 14; i++)
-	{
-		previousVanillaPlayerForms[i] = this->_playerForms[i];
-	}
-	for (int i = 14; i <= XMLStuff.PlayerFormData->maxid; i++) {
+
+	for (int i = 15; i <= XMLStuff.PlayerFormData->maxid; i++) {
 		if (CollectibleContributesToForm(CollectibleType, i))
 		{
 			this->IncrementPlayerFormCounter(i, -1);
 		}
 	}
 	super(CollectibleType, IgnoreModifiers, ActiveSlot, RemoveFromPlayerForm);
-	for (int i = 0; i < 14; i++)
+	for (int i = 0; i < 15; i++)
 	{
-		if (previousVanillaPlayerForms[i] == this->_playerForms[i])
+		if (!CollectibleAndPlayerFormShareTags(CollectibleType, i) && CollectibleAndPlayerFormShareCustomTags(CollectibleType, i))
+			this->IncrementPlayerFormCounter(i, -1);
+	}
+}
+
+HOOK_METHOD(Entity_Player, RerollAllCollectibles, (RNG* rng, bool includeActives)->void)
+{
+	std::vector<int> oldCollectibleList = this->GetCollectiblesList();
+	super(rng, includeActives);
+	std::vector<int> newCollectibleList = this->GetCollectiblesList();
+
+	for (int i = 1; i < oldCollectibleList.size(); i++)
+	{
+		if (g_Manager->GetItemConfig()->GetCollectible(i) == NULL)
+			continue;
+		if (g_Manager->GetItemConfig()->GetCollectible(i)->type == 3) // active item
+				continue;
+		if (newCollectibleList[i] - oldCollectibleList[i] < 0)
 		{
-			if (CollectibleAndPlayerFormShareCustomTags(CollectibleType, i))
-				this->IncrementPlayerFormCounter(i, 1);
+			for (int j = 15; j <= XMLStuff.PlayerFormData->maxid; j++) {
+				if (CollectibleContributesToForm(i, j))
+				{
+					this->IncrementPlayerFormCounter(j, -1); // Fun Isaac fact: rerolling items will remove transformation progress, but only once per unique items, so if you have 4 Bob's Brains and use D4, then you will keep Bob and have your transformation progress be equal to 3.
+				}
+			}
+			for (int j = 0; j < 15; j++)
+			{
+				if (!CollectibleAndPlayerFormShareTags(i, j) && CollectibleAndPlayerFormShareCustomTags(i, j))
+					this->IncrementPlayerFormCounter(j, -1);
+			}
 		}
 	}
 }
 
-/*HOOK_METHOD(Entity_Player, RerollAllCollectibles, (RNG* rng, bool includeActives)->void)
+/*
+As nice as it would be to let trinkets automatically count for transformations, this *would* break compatibility with vanilla, since it'd make several vanilla trinkets count for transformations, i.e. Bob's Bladder for Bob.
+I'll need to think about this in the future.
+HOOK_METHOD(Entity_Player, TriggerTrinketAdded, (unsigned int trinketID, bool firstTimePickingUp)->void)
 {
+	super(trinketID, firstTimePickingUp);
 
-	super(rng, includeActives);
+	for (int i = 15; i <= XMLStuff.PlayerFormData->maxid; i++) {
+		if (CollectibleContributesToForm(trinketID, i))
+		{
+			this->IncrementPlayerFormCounter(i, 1);
+		}
+	}
+	for (int i = 0; i < 15; i++)
+	{
+		if (!CollectibleAndPlayerFormShareTags(trinketID, i) && CollectibleAndPlayerFormShareCustomTags(trinketID, i))
+			this->IncrementPlayerFormCounter(i, 1);
+	}
 }
 
-HOOK_METHOD(Entity_Player, TriggerCollectibleRemoved, (unsigned int collectibleID)->void)
+HOOK_METHOD(Entity_Player, TriggerTrinketRemoved, (unsigned int trinketID)->void)
 {
-	if (g_Manager->GetItemConfig()->GetCollectible(collectibleID)->type == 3)
-	{
-		super(collectibleID);
-		return;
-	}
-	int previousVanillaPlayerForms[15];
-	for (int i = 0; i < 14; i++)
-	{
-		previousVanillaPlayerForms[i] = this->_playerForms[i];
-	}
-	for (int i = 14; i <= XMLStuff.PlayerFormData->maxid; i++) {
-		if (CollectibleContributesToForm(collectibleID, i))
+	super(trinketID);
+
+	for (int i = 15; i <= XMLStuff.PlayerFormData->maxid; i++) {
+		if (CollectibleContributesToForm(trinketID, i))
 		{
 			this->IncrementPlayerFormCounter(i, -1);
 		}
 	}
-	super(collectibleID);
-	for (int i = 0; i < 14; i++)
+	for (int i = 0; i < 15; i++)
 	{
-		if (previousVanillaPlayerForms[i] == this->_playerForms[i])
-		{
-			if (CollectibleAndPlayerFormShareCustomTags(collectibleID, i))
-				this->IncrementPlayerFormCounter(i, 1);
-		}
+		if (CollectibleContributesToForm(trinketID, i))
+			this->IncrementPlayerFormCounter(i, -1);
 	}
 }*/
 
@@ -184,15 +213,14 @@ LUA_FUNCTION(Lua_PlayerGetPlayerFormCounter) {
 	Entity_Player* player = lua::GetUserdata<Entity_Player*>(L, 1, lua::Metatables::ENTITY_PLAYER, "EntityPlayer");
 	int playerFormType = (int)luaL_checkinteger(L, 2);
 
-	if (playerFormType >= 0 && playerFormType <= 13)
+	if (playerFormType >= 0 && playerFormType <= 14)
 	{
 		lua_pushinteger(L, player->_playerForms[playerFormType]);
 	}
-	else if (playerFormType > 13)
+	else if (playerFormType > 14)
 	{
 		EntityPlayerPlus* playerPlus = GetEntityPlayerPlus(player);
-		int prev = playerPlus->customPlayerForms[playerFormType - 14];
-		lua_pushinteger(L, player->_playerForms[playerFormType]);
+		lua_pushinteger(L, playerPlus->customPlayerForms[playerFormType - 15]);
 	}
 	else {
 		return luaL_error(L, "Invalid PlayerForm %d", playerFormType);
