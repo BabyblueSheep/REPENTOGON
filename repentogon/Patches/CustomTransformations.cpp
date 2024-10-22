@@ -13,6 +13,8 @@
 // While there's only 14 transformations in the game, players store up to 15 transformations, likely due to there being a scrapped transformation.
 // This is why I start checking custom transformation IDs at 15 and not 14.
 
+
+
 bool CollectibleAndPlayerFormShareCustomTags(unsigned int collectibleID, unsigned int playerForm)
 {
 	set<string> itemCustomTags = XMLStuff.ItemData->customtags[collectibleID];
@@ -246,4 +248,13 @@ HOOK_METHOD(LuaEngine, RegisterClasses, () -> void) {
 
 	lua::RegisterFunction(_state, lua::Metatables::ENTITY_PLAYER, "GetPlayerFormCounter", Lua_PlayerGetPlayerFormCounter);
 	lua::RegisterFunction(_state, lua::Metatables::ENTITY_PLAYER, "IncrementPlayerFormCounter", Lua_PlayerIncrementPlayerFormCounter);
+}
+
+HOOK_METHOD(ModManager, LoadConfigs, ()->void)
+{
+	super();
+
+	// special exception for 14th loaded playerform since it's treated as a vanilla playerform yet isn't loaded in vanilla, so game assumes first modded playerform is a vanilla one
+	// fml
+	g_Manager->GetItemConfig()->GetPlayerForms()->at(14)->costume = atoi(XMLStuff.PlayerFormData->GetNodeById(14)["costume"].c_str());
 }

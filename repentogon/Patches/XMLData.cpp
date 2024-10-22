@@ -2148,10 +2148,6 @@ void ProcessXmlNode(xml_node<char>* node,bool force = false) {
 				if (costume.count("relativeid") > 0 && XMLStuff.PlayerFormData->byrelativecostume.find(lastmodid + costume["relativeid"]) != XMLStuff.PlayerFormData->byrelativecostume.end())
 				{
 					XMLStuff.PlayerFormData->nodes[XMLStuff.PlayerFormData->byrelativecostume[lastmodid + costume["relativeid"]]]["costume"] = costume["id"];
-					if (idnull == 14) // Special exception since the 14th transformation loaded gets treated as a vanilla one instead of a custom one.
-					{
-						g_Manager->GetItemConfig()->GetPlayerForms()->at(14)->costume = toint(costume["id"]);
-					}
 				}
 
 				if (costume.count("relativeid") > 0) { XMLStuff.NullCostumeData->byrelativeid[lastmodid + costume["relativeid"]] = idnull; }
