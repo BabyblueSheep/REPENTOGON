@@ -13,7 +13,7 @@
 // While there's only 14 transformations in the game, players store up to 15 transformations, likely due to there being a scrapped transformation.
 // This is why I start checking custom transformation IDs at 15 and not 14.
 
-
+std::string playerformsJsonPath;
 
 bool CollectibleAndPlayerFormShareCustomTags(unsigned int collectibleID, unsigned int playerForm)
 {
@@ -140,7 +140,7 @@ HOOK_METHOD(Entity_Player, RerollAllCollectibles, (RNG* rng, bool includeActives
 		if (g_Manager->GetItemConfig()->GetCollectible(i) == NULL)
 			continue;
 		if (g_Manager->GetItemConfig()->GetCollectible(i)->type == 3) // active item
-				continue;
+			continue;
 		if (newCollectibleList[i] - oldCollectibleList[i] < 0)
 		{
 			for (int j = 15; j <= XMLStuff.PlayerFormData->maxid; j++) {
@@ -194,6 +194,24 @@ HOOK_METHOD(Entity_Player, TriggerTrinketRemoved, (unsigned int trinketID)->void
 			this->IncrementPlayerFormCounter(i, -1);
 	}
 }*/
+
+HOOK_METHOD(Game, StartFromRerunState, (GameState* state)->void)
+{
+	super(state);
+	printf("starting from rerun!\n");
+}
+
+HOOK_METHOD(Game, RestoreState, (GameState* state, bool startGame)->void)
+{
+	super(state, startGame);
+	printf("restoring!\n");
+}
+
+HOOK_METHOD(Game, SaveState, (GameState* state)->void)
+{
+	super(state);
+	printf("saving!\n");
+}
 
 LUA_FUNCTION(Lua_GetPlayerFormByName)
 {
@@ -249,7 +267,7 @@ HOOK_METHOD(LuaEngine, RegisterClasses, () -> void) {
 	lua::RegisterFunction(_state, lua::Metatables::ENTITY_PLAYER, "GetPlayerFormCounter", Lua_PlayerGetPlayerFormCounter);
 	lua::RegisterFunction(_state, lua::Metatables::ENTITY_PLAYER, "IncrementPlayerFormCounter", Lua_PlayerIncrementPlayerFormCounter);
 }
-
+/*
 HOOK_METHOD(ModManager, LoadConfigs, ()->void)
 {
 	super();
@@ -257,4 +275,4 @@ HOOK_METHOD(ModManager, LoadConfigs, ()->void)
 	// special exception for 14th loaded playerform since it's treated as a vanilla playerform yet isn't loaded in vanilla, so game assumes first modded playerform is a vanilla one
 	// fml
 	g_Manager->GetItemConfig()->GetPlayerForms()->at(14)->costume = atoi(XMLStuff.PlayerFormData->GetNodeById(14)["costume"].c_str());
-}
+}*/

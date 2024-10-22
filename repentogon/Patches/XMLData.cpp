@@ -223,6 +223,7 @@ void LoadGenericXMLData(XMLDataHolder* data,xml_node<char>* daddy) {
 }
 
 void ProcessModEntry(char* xmlpath,ModEntry* mod) {
+	printf("xmlpath %s\n", xmlpath);
 	if (mod != NULL) { //it is null when its loading vanilla stuff
 		lastmodid = mod->GetId();
 	}
@@ -939,6 +940,7 @@ void ProcessXmlNode(xml_node<char>* node,bool force = false) {
 	xml_node<char>* babee;
 	int id = 0;
 	int idnull = 1;
+	printf("nodetype %d\n", nodetypeid);
 	switch(nodetypeid){
 	case 1: //entity
 		for (xml_node<char>* auxnode = node; auxnode; auxnode = auxnode->next_sibling()) {
@@ -2339,15 +2341,23 @@ void ProcessXmlNode(xml_node<char>* node,bool force = false) {
 				XMLStuff.PlayerFormData->maxid = XMLStuff.PlayerFormData->maxid + 1;
 				attributes["id"] = to_string(XMLStuff.PlayerFormData->maxid);
 				id = XMLStuff.PlayerFormData->maxid;
+				if (id == 14) // Skip 14th ID since the game treats the 14th playerform as a vanilla one
+					id += 1;
+
+				//printf("Modded playerform? %d\n", id);
 			}
 			if (id > XMLStuff.PlayerFormData->maxid) {
 				XMLStuff.PlayerFormData->maxid = id;
 			}
+			printf("id %d/%d\n", id, XMLStuff.PlayerFormData->maxid);
+			printf("%d %s\n", iscontent, lastmodid);
 
 			if (attributes.find("sourceid") == attributes.end()) {
 				attributes["sourceid"] = lastmodid;
+				printf("source id %s", attributes["sourceid"].c_str());
 			}
 			XMLStuff.PlayerFormData->ProcessChilds(auxnode, id);
+			printf("---\n");
 
 			if (attributes["name"].find("#") != string::npos) {
 				attributes["untranslatedname"] = attributes["name"];
@@ -3818,7 +3828,7 @@ HOOK_METHOD(xmldocument_rep, parse, (char* xmldata)-> void) {
 			super(BuildModdedXML(xmldata, "bosscolors.xml", false));
 		}
 		else if (charfind(xmldata, "<playerfo", 50)) {
-			//printf("yoyoyo %s", BuildModdedXML(xmldata, "playerforms.xml", false));
+			printf("%s\n", BuildModdedXML(xmldata, "playerforms.xml", false));
 			super(BuildModdedXML(xmldata, "playerforms.xml", false));
 		}
 		else if (charfind(xmldata, "<playe", 50)) {
